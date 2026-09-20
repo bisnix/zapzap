@@ -1,0 +1,28 @@
+{
+  "name": "zapzap",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "typecheck": "tsc --noEmit",
+    "deploy": "npm run build && wrangler deploy",
+    "db:local": "wrangler d1 migrations apply DB --local",
+    "db:remote": "wrangler d1 migrations apply DB --remote"
+  },
+  "dependencies": {
+    "@mmmike/web-push": "^1.0.1",
+    "hono": "^4.9.0",
+    "preact": "^10.27.0"
+  },
+  "devDependencies": {
+    "@preact/preset-vite": "^2.10.2",
+    "@cloudflare/workers-types": "^5.20260918.1",
+    "@types/node": "^24.0.0",
+    "@types/webextension-polyfill": "^0.12.1",
+    "typescript": "^5.9.2",
+    "vite": "^7.1.3",
+    "wrangler": "^4.30.0"
+  }
+}

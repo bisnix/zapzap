@@ -1,0 +1,15 @@
+node_modules
+dist
+.wrangler
+.dev.vars
+.dev.vars.*
+.env
+.env.*
+!.env.example
+coverage
+.vite
+.DS_Store
+*.tgz
+worker-configuration.d.ts
+*.local
+*.log

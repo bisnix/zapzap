@@ -1,0 +1,19 @@
+{
+  "manifest_version": 3,
+  "name": "Zapzap — send to your devices",
+  "version": "0.1.0",
+  "description": "Kirim teks, link, dan tab aktif ke inbox Zapzap.",
+  "permissions": ["activeTab", "storage", "tabs", "contextMenus"],
+  "host_permissions": ["https://zapzap.bisnix.workers.dev/*"],
+  "action": {
+    "default_title": "Zapzap",
+    "default_popup": "popup.html"
+  },
+  "background": { "service_worker": "background.js", "type": "module" },
+  "commands": {
+    "send-active-tab": {
+      "description": "Kirim tab aktif ke Zapzap"
+    }
+  },
+  "options_page": "options.html"
+}
