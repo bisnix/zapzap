@@ -76,13 +76,53 @@ function Compose({ onSent, initialText = '' }: { onSent: () => void; initialText
   </form>
 }
 
+function CopyIcon() {
+  return <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="12" height="12" rx="2" /><path d="M5 15V5a2 2 0 0 1 2-2h10" /></svg>
+}
+
+function CheckIcon() {
+  return <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 12.5l5 5L20 6.5" /></svg>
+}
+
+function TrashIcon() {
+  return <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6h18" /><path d="M8 6V4a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v2" /><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" /><line x1="10" y1="11" x2="10" y2="17" /><line x1="14" y1="11" x2="14" y2="17" /></svg>
+}
+
+function getCopyText(message: Message) {
+  const parts = [
+    message.text_content || '',
+    message.url && !message.text_content?.includes(message.url) ? message.url : ''
+  ].filter(Boolean)
+  if (parts.length) return parts.join('\n')
+  const keys = message.attachments?.length
+    ? message.attachments.map(a => a.attachment_key)
+    : message.attachment_key ? [message.attachment_key] : []
+  if (keys.length) return keys.map(key => `${location.origin}/api/uploads/${key}`).join('\n')
+  return ''
+}
+
 function MessageCard({ message, refresh }: { message: Message; refresh: () => void }) {
   const [offset, setOffset] = useState(0)
   const [startX, setStartX] = useState<number | null>(null)
   const [startY, setStartY] = useState<number | null>(null)
   const [swiping, setSwiping] = useState(false)
+  const [copied, setCopied] = useState(false)
+  const copyText = getCopyText(message)
   async function remove() { await api(`/api/messages/${message.id}`, { method: 'DELETE' }); refresh() }
   async function markRead() { await api(`/api/messages/${message.id}/read`, { method: 'PATCH' }); refresh() }
+  async function copy() {
+    if (!copyText) return
+    try {
+      if (navigator.clipboard?.writeText) await navigator.clipboard.writeText(copyText)
+      else {
+        const area = document.createElement('textarea')
+        area.value = copyText; document.body.appendChild(area); area.select()
+        document.execCommand('copy'); area.remove()
+      }
+      setCopied(true)
+      window.setTimeout(() => setCopied(false), 1600)
+    } catch { /* clipboard ditolak browser, biarkan user seleksi manual */ }
+  }
   function touchStart(event: TouchEvent) { setStartX(event.touches[0].clientX); setStartY(event.touches[0].clientY); setSwiping(false) }
   function touchMove(event: TouchEvent) {
     if (startX === null || startY === null) return
@@ -102,7 +142,7 @@ function MessageCard({ message, refresh }: { message: Message; refresh: () => vo
     <div class="message-meta"><span>{message.type === 'link' ? 'LINK' : message.type === 'image' ? 'IMAGE' : 'NOTE'}</span><time>{formatDate(message.created_at)}</time></div>
     {(message.text_content || message.url) && <p>{linkify([message.text_content, message.url && !message.text_content?.includes(message.url) ? message.url : ''].filter(Boolean).join('\n'))}</p>}
     {(message.attachments?.length || message.attachment_key) && <div class="image-grid">{(message.attachments?.length ? message.attachments : [{ attachment_key: message.attachment_key!, thumbnail_key: message.thumbnail_key }]).map((attachment, index) => <a class="image-preview" key={attachment.attachment_key} href={`/api/uploads/${attachment.attachment_key}`} target="_blank" rel="noreferrer"><img loading="lazy" src={`/api/uploads/${attachment.thumbnail_key || attachment.attachment_key}`} alt={`Lampiran gambar ${index + 1}`} /></a>)}</div>}
-    <div class="message-status">{message.read_at ? '✓ Dibaca' : 'Belum dibaca'}</div><div class="message-actions"><button class="action-icon" title="Hapus pesan" aria-label="Hapus pesan" onClick={remove}>×</button>{!message.read_at && <button class="action-icon" title="Tandai sudah dibaca" aria-label="Tandai sudah dibaca" onClick={markRead}>✓</button>}</div>
+    <div class="message-status">{message.read_at ? '✓ Dibaca' : 'Belum dibaca'}</div><div class="message-actions">{copied && <span class="copy-hint">Disalin!</span>}<div class="action-bar" role="toolbar" aria-label="Aksi pesan"><button class={`action-btn${copied ? ' copied' : ''}`} title={copyText ? 'Salin ke clipboard' : 'Tidak ada teks untuk disalin'} aria-label="Salin ke clipboard" disabled={!copyText} onClick={copy}>{copied ? <CheckIcon /> : <CopyIcon />}</button>{!message.read_at && <button class="action-btn" title="Tandai sudah dibaca" aria-label="Tandai sudah dibaca" onClick={markRead}><CheckIcon /></button>}<button class="action-btn danger" title="Hapus pesan" aria-label="Hapus pesan" onClick={remove}><TrashIcon /></button></div></div>
     </div>
   </article>
 }
